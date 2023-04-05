@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  WorkspaceMember WorkspaceMember[]
+  BrandMember     BrandMember[]
+
+  @@map("users")
+}
+
+enum WorkspaceMemberRole {
+  owner
+  admin
+  worker
+}
+
+model WorkspaceMember {
+  id          String              @id @default(auto()) @map("_id") @db.ObjectId
+  workspace   Workspace           @relation(fields: [workspaceId], references: [id])
+  user        User                @relation(fields: [userId], references: [id])
+  role        WorkspaceMemberRole
+  workspaceId String              @db.ObjectId
+  userId      String              @db.ObjectId
+
+  @@map("workspace_member")
+}
+
+model Workspace {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  WorkspaceMember WorkspaceMember[]
+  WorkspaceBrand  WorkspaceBrand[]
+  Connection      Connection[]
+
+  @@map("workspaces")
+}
+
+enum BrandMemberRole {
+  admin
+  editor
+  viewer
+}
+
+model BrandMember {
+  id      String          @id @default(auto()) @map("_id") @db.ObjectId
+  brand   Brand           @relation(fields: [brandId], references: [id])
+  user    User            @relation(fields: [userId], references: [id])
+  role    BrandMemberRole
+  brandId String          @db.ObjectId
+  userId  String          @db.ObjectId
+
+  @@map("brand_members")
+}
+
+enum WorkspaceBrandType {
+  owner
+  shared
+}
+
+model WorkspaceBrand {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  brand       Brand              @relation(fields: [brandId], references: [id])
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id])
+  type        WorkspaceBrandType
+  brandId     String             @db.ObjectId
+  workspaceId String             @db.ObjectId
+
+  @@map("workspace_brands")
+}
+
+model Brand {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  BrandMember     BrandMember[]
+  WorkspaceBrand  WorkspaceBrand[]
+  ConnectionBrand ConnectionBrand[]
+
+  @@map("brands")
+}
+
+model ConnectionBrand {
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  connection Connection[]
+  brand      Brand        @relation(fields: [brandId], references: [id])
+  brandId    String       @db.ObjectId
+
+  @@map("connection_brands")
+}
+
+model Connection {
+  id                String          @id @default(auto()) @map("_id") @db.ObjectId
+  name              String
+  workspace         Workspace       @relation(fields: [workspaceId], references: [id])
+  brand             ConnectionBrand @relation(fields: [connectionBrandId], references: [id])
+  credentials       Json
+  workspaceId       String          @db.ObjectId
+  connectionBrandId String          @db.ObjectId
+
+  @@map("connections")
+}
